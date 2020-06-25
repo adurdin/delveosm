@@ -22,7 +22,7 @@
 ##
 ###############################################################################
 
-.PHONY: all clean
+.PHONY: all install run clean
 
 .SUFFIXES:
 .SUFFIXES: .o .cpp .rc 
@@ -30,10 +30,15 @@
 
 srcdir = .
 
+INSTALLDIR = e:\\dev\\T2FM\\test_delve
+RUNDIR = e:\\dev\\TMA1.27
+RUN = $(RUNDIR)\\Dromed.exe
+
 GAME = 2
 
 LGDIR = liblg
 
+CP = cp
 CC = gcc
 CXX = g++
 AR = ar
@@ -65,10 +70,13 @@ CXXFLAGS =  -W -Wall -Wno-unused-parameter \
 		-fno-pcc-struct-return -mms-bitfields
 DLLFLAGS =  --target i386-mingw32
 
-all: empty.osm echo.osm demo.osm
+all: delve.osm
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(CXXDEBUG) $(DEFINES) $(INCLUDES) -o $@ -c $<
+
+delve.osm: delve.o $(LGDIR)/lib$(LGLIB).a
+	$(DLLWRAP) $(DLLFLAGS) --def script.def -o $@ $< $(LDFLAGS) $(LDDEBUG) $(LIBDIRS) $(LIBS)
 
 %.osm: %.o ScriptModule.o Script.o $(LGDIR)/lib$(LGLIB).a
 	$(DLLWRAP) $(DLLFLAGS) --def script.def -o $@ $< ScriptModule.o Script.o $(LDFLAGS) $(LDDEBUG) $(LIBDIRS) $(LIBS)
@@ -79,3 +87,9 @@ $(LGDIR)/lib$(LGLIB).a:
 clean:
 	$(RM) *.o *.osm
 	$(MAKE) -C $(LGDIR) clean
+
+install: delve.osm
+	$(CP) delve.osm "$(INSTALLDIR)" && echo Installed.
+
+run: install
+	cd "$(RUNDIR)" && "$(RUN)" -fm=test_delve
