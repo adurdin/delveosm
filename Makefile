@@ -78,6 +78,8 @@ DLLFLAGS =  --target i386-mingw32
 
 all: delve.osm
 
+guids.o: IApplication.h ISndMixer.h
+
 %.o: %.c Makefile
 	$(CC) $(CFLAGS) $(CCDEBUG) $(DEFINES) $(INCLUDES) -o $@ -c $<
 

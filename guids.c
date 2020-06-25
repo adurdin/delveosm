@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 
 typedef unsigned long DWORD;
@@ -1316,6 +1317,81 @@ IUnknown *_AppGetAggregated(REFIID iid)
 }
 
 #define AppGetObj(INTERFACE)     ((INTERFACE *)(_AppGetAggregated(IID_TO_REFIID( IID_ ## INTERFACE ))))
+
+// ----
+
+#include "ISndMixer.h"
+
+static ISndMixer* pSndMixer;
+
+ISndSample* CreateSineWaveSample(ISndMixer* pMixer)
+{
+    ISndSample* pSample;
+    sSndAttribs attribs;
+
+    attribs.dataType = kSndDataPCM;
+    attribs.sampleRate = 22050;
+    attribs.bitsPerSample = 16;
+    attribs.nChannels = 1;
+    int totalSamples = (1*attribs.sampleRate);
+    int bytesPerSample = (attribs.nChannels*attribs.bitsPerSample/8);
+    int totalBytes = (totalSamples*bytesPerSample);
+    attribs.bytesPerBlock = totalBytes;
+    attribs.samplesPerBlock = totalSamples;
+    attribs.numSamples = totalSamples;
+
+    static int16_t sine[16] = {
+        0, 12540, 23170, 30274, 32767, 30274, 23170, 12540,
+        0, -12540, -23170, -30274, -32767, -30274, -23170, -12540,
+    };
+    static int16_t samples[22050];
+    static int initialized = 0;
+    if (! initialized) {
+        initialized = 1;
+        for (int i=0; i<22050; ++i) {
+            samples[i] = sine[i%16];
+        }
+    }
+
+    pSample = ISndMixer_CreateRawSample(pMixer, kSndSampleNormal,
+        (void*)&samples, sizeof(samples), attribs.numSamples, &attribs );
+    // pSample = ISndMixer_CreateRawSample(pMixer, kSndSampleStream, NULL,
+    //                                     finalDataLen, totalSamples, &attribs );
+    return pSample;
+}
+
+void explore_sndmixer(void)
+{
+    g_pfnMPrintf("Delving into ISndMixer...!\n");
+
+    DWORD offset_ppSndMixer = 0x16e07a0UL; // Dromed ND 1.27
+    // DWORD offset_ppSndMixer = 0x5cdd30UL; // Thief2 ND 1.27
+    DWORD baseAddress = (DWORD)GetModuleHandleA(0);
+    ISndMixer** ppSndMixer = (ISndMixer**)(offset_ppSndMixer+baseAddress);
+    pSndMixer = *ppSndMixer;
+    if (! pSndMixer) {
+        g_pfnMPrintf("pSndMixer is NULL!\n");
+        return;
+    }
+    g_pfnMPrintf("pSndMixer is %p\n", pSndMixer);
+
+    int32_t volume = ISndMixer_GetMasterVolume(pSndMixer);
+    printf("Master volume is 0x%08x\n", volume);
+    // STDMETHOD_(int32,   SetMasterVolume)(THIS_  int32 vol) PURE;
+    // STDMETHOD_(int32,   GetMasterVolume)(THIS) PURE;
+
+    ISndSample* pSample = CreateSineWaveSample(pSndMixer);
+    if (pSample) {
+        printf("Created sample...\n");
+        printf("  volume: %d\n", ISndSample_GetVolume(pSample));
+        printf("  pan: %d\n", ISndSample_GetPan(pSample));
+        printf("  frequency: %u\n", ISndSample_GetFrequency(pSample));
+        printf("  group: %d\n", ISndSample_GetGroup(pSample));
+        ISndSample_Play(pSample);
+    } else {
+        printf("Sample was not created :(\n");
+    }
+}
 
 // ----
 

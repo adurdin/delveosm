@@ -35,6 +35,7 @@ IScriptMan *g_pScriptManager = NULL;
 MPrintfProc g_pfnMPrintf = NULL;
 
 extern "C" void explore_guids(void);
+extern "C" void explore_sndmixer(void);
 
 extern "C" __declspec(dllexport) __stdcall 
 int ScriptModuleInit (const char* pszName, 
@@ -66,6 +67,7 @@ int ScriptModuleInit (const char* pszName,
     // print the output to the monolog, then return failure.
 
     explore_guids();
+    explore_sndmixer();
 
     return 0;
 }
