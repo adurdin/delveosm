@@ -1388,6 +1388,7 @@ void explore_sndmixer(void)
         printf("  frequency: %u\n", ISndSample_GetFrequency(pSample));
         printf("  group: %d\n", ISndSample_GetGroup(pSample));
         ISndSample_Play(pSample);
+        ISndSample_Fade(pSample, kSndFadeVolume, kSndMinVolume, 1000, kSndFadeStop);
     } else {
         printf("Sample was not created :(\n");
     }
