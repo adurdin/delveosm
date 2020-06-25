@@ -34,6 +34,7 @@ IMalloc *g_pMalloc = NULL;
 IScriptMan *g_pScriptManager = NULL;
 MPrintfProc g_pfnMPrintf = NULL;
 
+extern "C" void explore_guids(void);
 
 extern "C" __declspec(dllexport) __stdcall 
 int ScriptModuleInit (const char* pszName, 
@@ -64,7 +65,7 @@ int ScriptModuleInit (const char* pszName,
     // Actually we don't want to load successfully! Just do some poking and
     // print the output to the monolog, then return failure.
 
-    g_pfnMPrintf("Delving...!\n");
+    explore_guids();
 
     return 0;
 }

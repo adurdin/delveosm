@@ -48,11 +48,13 @@ DEFINES = -DWINVER=0x0500 -D_WIN32_WINNT=0x0500 -DWIN32_LEAN_AND_MEAN -D_DARKGAM
 
 ifdef DEBUG
 DEFINES := $(DEFINES) -D_DEBUG 
+CCDEBUG = -g -O0
 CXXDEBUG = -g -O0
 LDDEBUG = -g
 LGLIB = lg-d
 else
 DEFINES := $(DEFINES) -DNDEBUG
+CCDEBUG = -O3 
 CXXDEBUG = -O3 
 LDDEBUG =
 LGLIB = lg
@@ -65,18 +67,25 @@ LIBS = -l$(LGLIB) -luuid -lstdc++
 INCLUDES = -I$(LGDIR)
 # If you care for this... # -Wno-unused-variable 
 # A lot of the callbacks have unused parameters, so I turn that off.
-CXXFLAGS =  -W -Wall -Wno-unused-parameter \
+CFLAGS = -W -Wall -Wno-unused-parameter \
+		-Wno-unused-const-variable \
+		-masm=att \
+		-fno-pcc-struct-return -mms-bitfields
+CXXFLAGS = -W -Wall -Wno-unused-parameter \
 		-std=c++11 -masm=att \
 		-fno-pcc-struct-return -mms-bitfields
 DLLFLAGS =  --target i386-mingw32
 
 all: delve.osm
 
-%.o: %.cpp
+%.o: %.c Makefile
+	$(CC) $(CFLAGS) $(CCDEBUG) $(DEFINES) $(INCLUDES) -o $@ -c $<
+
+%.o: %.cpp Makefile
 	$(CXX) $(CXXFLAGS) $(CXXDEBUG) $(DEFINES) $(INCLUDES) -o $@ -c $<
 
-delve.osm: delve.o $(LGDIR)/lib$(LGLIB).a
-	$(DLLWRAP) $(DLLFLAGS) --def script.def -o $@ $< $(LDFLAGS) $(LDDEBUG) $(LIBDIRS) $(LIBS)
+delve.osm: delve.o guids.o $(LGDIR)/lib$(LGLIB).a
+	$(DLLWRAP) $(DLLFLAGS) --def script.def -o $@ $< guids.o $(LDFLAGS) $(LDDEBUG) $(LIBDIRS) $(LIBS)
 
 %.osm: %.o ScriptModule.o Script.o $(LGDIR)/lib$(LGLIB).a
 	$(DLLWRAP) $(DLLFLAGS) --def script.def -o $@ $< ScriptModule.o Script.o $(LDFLAGS) $(LDDEBUG) $(LIBDIRS) $(LIBS)
